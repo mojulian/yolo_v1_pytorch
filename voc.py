@@ -38,6 +38,12 @@ class VOCDataset(Dataset):
             splitted = line.strip().split()
 
             fname = splitted[0]
+            # if '2009_00455.jpg' in fname or \
+            #     '2010_001544.jpg' in fname or \
+            #     '2009_004492.jpg' in fname or \
+            #     '2008_004218.jpg' in fname or \
+            #     '2008_007500.jpg' in fname :
+            #     continue
             path = os.path.join(image_dir, fname)
             self.paths.append(path)
 
@@ -63,16 +69,22 @@ class VOCDataset(Dataset):
         labels = self.labels[idx].clone() # [n,]
 
         if self.is_train:
-            img, boxes = self.random_flip(img, boxes)
-            img, boxes = self.random_scale(img, boxes)
+            try:
+        
+                img, boxes = self.random_flip(img, boxes)
+                img, boxes = self.random_scale(img, boxes)
 
-            img = self.random_blur(img)
-            img = self.random_brightness(img)
-            img = self.random_hue(img)
-            img = self.random_saturation(img)
+                img = self.random_blur(img)
+                img = self.random_brightness(img)
+                img = self.random_hue(img)
+                img = self.random_saturation(img)
 
-            img, boxes, labels = self.random_shift(img, boxes, labels)
-            img, boxes, labels = self.random_crop(img, boxes, labels)
+                img, boxes, labels = self.random_shift(img, boxes, labels)
+                img, boxes, labels = self.random_crop(img, boxes, labels)
+
+            except AttributeError as e:
+                print(f'path: {path} img: {img}, boxes: {boxes}')
+                print(e)
 
         # For debug.
         debug_dir = 'tmp/voc_tta'
@@ -140,9 +152,9 @@ class VOCDataset(Dataset):
             return img, boxes
 
         h, w, _ = img.shape
-
+        
         img = np.fliplr(img)
-
+        # print(f'boxes shapee {boxes.shape}')
         x1, x2 = boxes[:, 0], boxes[:, 2]
         x1_new = w - x2
         x2_new = w - x1
@@ -155,7 +167,9 @@ class VOCDataset(Dataset):
             return img, boxes
 
         scale = random.uniform(0.8, 1.2)
+
         h, w, _ = img.shape
+        
         img = cv2.resize(img, dsize=(int(w * scale), h), interpolation=cv2.INTER_LINEAR)
 
         scale_tensor = torch.FloatTensor([[scale, 1.0, scale, 1.0]]).expand_as(boxes)
@@ -296,15 +310,23 @@ def test():
     from torch.utils.data import DataLoader
 
     image_dir = 'data/VOC_allimgs/'
+    image_dir = '/home/julian/datasets/VOCdevkit'
+
     label_txt = ['data/voc2007.txt', 'data/voc2012.txt']
+    # label_txt = ('/home/julian/datasets/VOCdevkit/2007_train.txt', '/home/julian/datasets/VOCdevkit/2012_train.txt')
+
 
     dataset = VOCDataset(True, image_dir, label_txt)
+
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
 
+    print(f'dataset length: {len(dataset)}')
+    print(f'data_loader length: {len(data_loader)}')
+
     data_iter = iter(data_loader)
-    for i in range(100):
+    for i in range(len(data_loader)):
         img, target = next(data_iter)
-        print(img.size(), target.size())
+        print(i, img.size(), target.size())
 
 if __name__ == '__main__':
     test()

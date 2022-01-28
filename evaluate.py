@@ -47,10 +47,12 @@ def evaluate(preds,targets,class_names,threshold=0.5):
     # https://github.com/rafaelpadilla/Object-Detection-Metrics
 
     aps = [] # list of average precisions (APs) for each class.
+    
+    print(f'iou threshold in use for evaluation is: {threshold}')
 
     for class_name in class_names:
         class_preds = preds[class_name] # all predicted objects for this class.
-
+        
         if len(class_preds) == 0:
             ap = 0.0 # if no box detected, assigne 0 for AP of this class.
             print('---class {} AP {}---'.format(class_name, ap))
@@ -130,12 +132,16 @@ def evaluate(preds,targets,class_names,threshold=0.5):
 if __name__ == '__main__':
     # Path to the yolo weight to test.
     model_path = 'weights/yolo/model_best.pth'
+    model_path = 'results/yolo/Jan20_08-56-49/model_best.pth'
+    model_path = '../ai8x-training/model_latest_yolo_v1_pytorch.pth'
+
     # GPU device on which yolo is loaded.
     gpu_id = 0
     # Path to label file.
     label_path = 'data/voc2007test.txt'
     # Path to image dir.
     image_dir = 'data/VOC_allimgs/'
+    image_dir = '/home/julian/datasets/VOCdevkit'
 
 
     voc_class_names = list(VOC_CLASS_BGR.keys())
@@ -192,4 +198,4 @@ if __name__ == '__main__':
 
     print('Evaluate the detection result...')
 
-    evaluate(preds, targets, class_names=voc_class_names)
+    evaluate(preds, targets, class_names=voc_class_names, threshold=0.25)

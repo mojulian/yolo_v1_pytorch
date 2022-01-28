@@ -96,7 +96,7 @@ class Loss(nn.Module):
                                                                 # n_noobj: number of the cells which do not contain objects.
         noobj_target = target_tensor[noobj_mask].view(-1, N)    # target tensor on the cells which do not contain objects. [n_noobj, N]
                                                                 # n_noobj: number of the cells which do not contain objects.
-        noobj_conf_mask = torch.cuda.ByteTensor(noobj_pred.size()).fill_(0) # [n_noobj, N]
+        noobj_conf_mask = torch.cuda.BoolTensor(noobj_pred.size()).fill_(0) # [n_noobj, N]
         for b in range(B):
             noobj_conf_mask[:, 4 + b*5] = 1 # noobj_conf_mask[:, 4] = 1; noobj_conf_mask[:, 9] = 1
         noobj_pred_conf = noobj_pred[noobj_conf_mask]       # [n_noobj, 2=len([conf1, conf2])]
@@ -104,8 +104,8 @@ class Loss(nn.Module):
         loss_noobj = F.mse_loss(noobj_pred_conf, noobj_target_conf, reduction='sum')
 
         # Compute loss for the cells with objects.
-        coord_response_mask = torch.cuda.ByteTensor(bbox_target.size()).fill_(0)    # [n_coord x B, 5]
-        coord_not_response_mask = torch.cuda.ByteTensor(bbox_target.size()).fill_(1)# [n_coord x B, 5]
+        coord_response_mask = torch.cuda.BoolTensor(bbox_target.size()).fill_(0)    # [n_coord x B, 5]
+        coord_not_response_mask = torch.cuda.BoolTensor(bbox_target.size()).fill_(1)# [n_coord x B, 5]
         bbox_target_iou = torch.zeros(bbox_target.size()).cuda()                    # [n_coord x B, 5], only the last 1=(conf,) is used
 
         # Choose the predicted bbox having the highest IoU for each target bbox.

@@ -12,7 +12,7 @@ import numpy as np
 import math
 from datetime import datetime
 
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 
 
 # Check if GPU devices are available.
@@ -22,14 +22,17 @@ print('CUDA current_device: {}'.format(torch.cuda.current_device()))
 print('CUDA device_count: {}'.format(torch.cuda.device_count()))
 
 # Path to data dir.
-image_dir = 'data/VOC_allimgs/'
+image_dir = '/home/julian/datasets/VOCdevkit'
 
 # Path to label files.
 train_label = ('data/voc2007.txt', 'data/voc2012.txt')
+# train_label = ('/home/julian/datasets/VOCdevkit/2007_train.txt', '/home/julian/datasets/VOCdevkit/2012_train.txt')
 val_label = 'data/voc2007test.txt'
+# val_label = '/home/julian/datasets/VOCdevkit/2007_val.txt'
+
 
 # Path to checkpoint file containing pre-trained DarkNet weight.
-checkpoint_path = 'weights/darknet/model_best.pth.tar'
+# checkpoint_path = 'weights/darknet/model_best.pth.tar'
 
 # Frequency to print/log the results.
 print_freq = 5
@@ -41,7 +44,7 @@ base_lr = 0.01
 momentum = 0.9
 weight_decay = 5.0e-4
 num_epochs = 135
-batch_size = 64
+batch_size = 16
 
 # Learning rate scheduling.
 def update_lr(optimizer, epoch, burnin_base, burnin_exp=4.0):
@@ -64,16 +67,19 @@ def get_lr(optimizer):
         return param_group['lr']
 
 # Load pre-trained darknet.
+
+# init darknet
 darknet = DarkNet(conv_only=True, bn=True, init_weight=True)
 darknet.features = torch.nn.DataParallel(darknet.features)
 
-src_state_dict = torch.load(checkpoint_path)['state_dict']
-dst_state_dict = darknet.state_dict()
+# # since we do without pretraining for testing
+# src_state_dict = torch.load(checkpoint_path)['state_dict']
+# dst_state_dict = darknet.state_dict()
 
-for k in dst_state_dict.keys():
-    print('Loading weight of', k)
-    dst_state_dict[k] = src_state_dict[k]
-darknet.load_state_dict(dst_state_dict)
+# for k in dst_state_dict.keys():
+#     print('Loading weight of', k)
+#     dst_state_dict[k] = src_state_dict[k]
+# darknet.load_state_dict(dst_state_dict)
 
 # Load YOLO model.
 yolo = YOLOv1(darknet.features)
@@ -83,6 +89,7 @@ yolo.cuda()
 # Setup loss and optimizer.
 criterion = Loss(feature_size=yolo.feature_size)
 optimizer = torch.optim.SGD(yolo.parameters(), lr=init_lr, momentum=momentum, weight_decay=weight_decay)
+# optimizer = torch.optim.Adam(yolo.parameters(), lr=init_lr, weight_decay=weight_decay)
 
 # Load Pascal-VOC dataset.
 train_dataset = VOCDataset(True, image_dir, train_label)
@@ -96,7 +103,9 @@ print('Number of training images: ', len(train_dataset))
 # Open TensorBoardX summary writer
 log_dir = datetime.now().strftime('%b%d_%H-%M-%S')
 log_dir = os.path.join('results/yolo', log_dir)
-writer = SummaryWriter(log_dir=log_dir)
+if not os.path.exists(log_dir):
+    os.mkdir(log_dir)
+# writer = SummaryWriter(log_dir=log_dir)
 
 # Training loop.
 logfile = open(os.path.join(log_dir, 'log.txt'), 'w')
@@ -141,9 +150,9 @@ for epoch in range(num_epochs):
 
         # TensorBoard.
         n_iter = epoch * len(train_loader) + i
-        if n_iter % tb_log_freq == 0:
-            writer.add_scalar('train/loss', loss_this_iter, n_iter)
-            writer.add_scalar('lr', lr, n_iter)
+        # if n_iter % tb_log_freq == 0:
+            # writer.add_scalar('train/loss', loss_this_iter, n_iter)
+            # writer.add_scalar('lr', lr, n_iter)
 
     # Validation.
     yolo.eval()
@@ -178,8 +187,8 @@ for epoch in range(num_epochs):
     print('Epoch [%d/%d], Val Loss: %.4f, Best Val Loss: %.4f'
     % (epoch + 1, num_epochs, val_loss, best_val_loss))
 
-    # TensorBoard.
-    writer.add_scalar('test/loss', val_loss, epoch + 1)
+    # # TensorBoard.
+    # writer.add_scalar('test/loss', val_loss, epoch + 1)
 
-writer.close()
+# writer.close()
 logfile.close()

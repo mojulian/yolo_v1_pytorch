@@ -147,3 +147,7 @@ dmypy.json
 .history
 
 # End of https://www.gitignore.io/api/python,visualstudiocode
+
+## my custom ignores
+log_dir/*
+nohup*

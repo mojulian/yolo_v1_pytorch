@@ -288,12 +288,12 @@ if __name__ == '__main__':
     image_path = 'data/test_samples/009046.jpg'
     out_path = 'result.png'
     # Path to the yolo weight.
-    model_path = 'weights/yolo/model_best.pth'
+    model_path = 'results/yolo/Jan20_08-56-49/model_best.pth'
     # GPU device on which yolo is loaded.
     gpu_id = 0
 
     # Load model.
-    yolo = YOLODetector(model_path, gpu_id=gpu_id, conf_thresh=0.1, prob_thresh=0.1, nms_thresh=0.35)
+    yolo = YOLODetector(model_path, gpu_id=gpu_id, conf_thresh=0.01, prob_thresh=0.01, nms_thresh=0.1)
 
     # Load image.
     image = cv2.imread(image_path)
